@@ -1,0 +1,8 @@
+# Task 2: Contracts, nested data and a star schema
+
+**Name:** Loay Essam
+**ID:** 58-5075
+
+## What I did
+
+My notebook read 283 lines from `bookings.jsonl`. Validation against the Pydantic contract quarantined 21 bookings: 4 with a malformed `student.id`, 4 whose `total` did not equal the sum of qty × price, 3 with a ticket type outside standard/vip/student, 3 with a ticket qty below 1, 3 booked on or after the event date, 2 with a missing (null) `event`, and 2 with an empty `tickets` list. Another 3 were quarantined as `duplicate booking_id` (B0035, B0066, B0107), leaving 259 bookings and 314 ticket entries. The duplicate check runs after validation so that "the first copy" means the first valid copy: if the first copy of an id were broken and the re-send were clean, deduplicating first would throw away the good copy and keep the bad one. In this file every duplicate is an exact, valid copy, so swapping the order gives the same counts (the notebook checks this), but on another file it could change them. The drifting field is `promo_code`: it is absent from every valid booking made before 2026-10-20 and present (sometimes as null) from 2026-10-20 01:05 UTC on. The model declares it as optional with a default of None, so older documents still pass and get a null `promo_code` column. The booking's `total` is not in `fact_ticket_sales` because the fact's grain is one ticket entry, while total belongs to the whole booking. A booking with two ticket types would have its total repeated on both rows, so SUM(total) over the fact gives 42,000 EGP instead of the true 31,285 EGP: it double-counts every multi-ticket booking.
